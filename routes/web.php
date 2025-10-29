@@ -22,6 +22,7 @@ Route::get('/products', \App\Livewire\Products::class)
     ->name('products');
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PublicProductsController;
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -34,4 +35,11 @@ Route::post('/logout', function () {
 })->name('logout');
 
 
+// Public Products Route (tanpa login)
+Route::get('/public/products', [PublicProductsController::class, 'index'])
+    ->name('public.products');
+    
+
+
 require __DIR__.'/auth.php';
+

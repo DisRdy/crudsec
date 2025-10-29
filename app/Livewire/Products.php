@@ -86,6 +86,7 @@ class Products extends Component
     {
         Product::find($id)->delete();
         session()->flash('message', 'Produk berhasil dihapus!');
+
     }
 
     public function cancel()

@@ -9,7 +9,7 @@
             </div>
             <div>
                 <h1 class="brand-title">Inventory</h1>
-                <p class="brand-subtitle">Management System</p>
+                <p class="brand-subtitle">NFTs</p>
             </div>
         </div>
     </div>

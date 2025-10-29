@@ -1,11 +1,7 @@
 import './bootstrap';
 
-// Simple Delete Confirmation Modal
+// Simple Delete Confirmation Modal - Ultra Simple Version
 
-// Create modal HTML
-// Simple Delete Confirmation Modal
-
-// Create modal HTML
 const modalHTML = `
 <div id="deleteModal" class="delete-modal">
     <div class="delete-modal-content">
@@ -34,49 +30,56 @@ const modalHTML = `
 </div>
 `;
 
-// Add modal to body when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    // Add modal to body
+    if (!document.getElementById('deleteModal')) {
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
     
     const modal = document.getElementById('deleteModal');
     const messageEl = document.getElementById('deleteModalMessage');
     const cancelBtn = document.getElementById('deleteModalCancel');
     const confirmBtn = document.getElementById('deleteModalConfirm');
     
-    let deleteCallback = null;
+    let pendingButton = null;
     
-    // Show modal function
-    window.showDeleteModal = function(message, callback) {
-        messageEl.textContent = message;
-        deleteCallback = callback;
-        modal.classList.add('show');
-    };
-    
-    // Hide modal function
     function hideModal() {
         modal.classList.remove('show');
-        deleteCallback = null;
+        pendingButton = null;
     }
     
-    // Cancel button
+    function showModal(message, button) {
+        messageEl.textContent = message;
+        pendingButton = button;
+        modal.classList.add('show');
+    }
+    
+    // Cancel
     cancelBtn.addEventListener('click', hideModal);
     
-    // Confirm button
+    // Confirm - trigger original button click
     confirmBtn.addEventListener('click', function() {
-        if (deleteCallback) {
-            deleteCallback();
+        if (pendingButton) {
+            const confirmMsg = pendingButton.getAttribute('wire:confirm');
+            pendingButton.removeAttribute('wire:confirm');
+            pendingButton.click();
+            setTimeout(() => {
+                if (confirmMsg) {
+                    pendingButton.setAttribute('wire:confirm', confirmMsg);
+                }
+            }, 500);
         }
         hideModal();
     });
     
-    // Click outside to close
+    // Click outside
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
             hideModal();
         }
     });
     
-    // ESC key to close
+    // ESC key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && modal.classList.contains('show')) {
             hideModal();
@@ -85,34 +88,75 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Intercept delete buttons
     document.addEventListener('click', function(e) {
-        const btn = e.target.closest('[wire\\:confirm]');
-        if (btn && btn.getAttribute('wire:click')?.includes('delete')) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const message = btn.getAttribute('wire:confirm');
-            const wireClick = btn.getAttribute('wire:click');
-            
-            showDeleteModal(message, function() {
-                // Get Livewire component and call delete directly
-                const wireId = btn.closest('[wire\\:id]')?.getAttribute('wire:id');
-                const wireClick = btn.getAttribute('wire:click');
-                
-                // Parse wire:click to get method and params
-                const match = wireClick.match(/(\w+)\((.+)\)/);
-                if (match && window.Livewire) {
-                    const method = match[1];
-                    const params = match[2].split(',').map(p => {
-                        const trimmed = p.trim();
-                        return isNaN(trimmed) ? trimmed : Number(trimmed);
-                    });
-                    
-                    // Call Livewire component directly
-                    if (wireId) {
-                        window.Livewire.find(wireId).call(method, ...params);
-                    }
-                }
-            });
+        const btn = e.target.closest('[wire\\:click*="delete"][wire\\:confirm]');
+        if (btn) {
+            const confirmMsg = btn.getAttribute('wire:confirm');
+            if (confirmMsg) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                showModal(confirmMsg, btn);
+            }
         }
     }, true);
+});
+
+// Web3 Welcome Page Animations
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Add floating particles effect
+    function createParticle() {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDuration = (Math.random() * 3 + 7) + 's';
+        particle.style.animationDelay = Math.random() * 5 + 's';
+        
+        document.body.appendChild(particle);
+        
+        setTimeout(() => {
+            particle.remove();
+        }, 15000);
+    }
+
+    // Create particles periodically
+    if (window.location.pathname === '/' || window.location.pathname === '/welcome') {
+        setInterval(createParticle, 2000);
+    }
+
+    // Intersection Observer for fade-in animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    // Observe all glass cards and feature sections
+    document.querySelectorAll('.glass-card, section').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
+    });
 });
