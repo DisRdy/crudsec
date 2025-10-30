@@ -1,7 +1,12 @@
 <x-slot name="header">
-    <h2 class="font-semibold text-xl dark:text-gray-100">
-        {{ __('Products') }}
-    </h2>
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="font-bold text-3xl text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                {{ __('Products') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Manage Your Inventory.</p>
+        </div>
+    </div>
 </x-slot>
 
 <div class="space-y-6">
