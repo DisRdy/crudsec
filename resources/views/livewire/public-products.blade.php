@@ -102,13 +102,6 @@
                             </div>
 
                             <!-- View Details (for authenticated users) -->
-                            @auth
-                                <div class="mt-4">
-                                    <a href="{{ route('products') }}" class="block w-full text-center px-4 py-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 font-semibold rounded-lg transition-colors duration-200 text-sm border border-purple-500/30">
-                                        Manage Product
-                                    </a>
-                                </div>
-                            @endauth
                         </div>
                     @endforeach
                 </div>

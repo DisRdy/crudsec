@@ -42,32 +42,75 @@ document.addEventListener('DOMContentLoaded', function() {
     const confirmBtn = document.getElementById('deleteModalConfirm');
     
     let pendingButton = null;
+    let wireClickValue = null;
     
     function hideModal() {
         modal.classList.remove('show');
         pendingButton = null;
+        wireClickValue = null;
     }
     
     function showModal(message, button) {
         messageEl.textContent = message;
         pendingButton = button;
+        wireClickValue = button.getAttribute('wire:click');
         modal.classList.add('show');
     }
     
     // Cancel
     cancelBtn.addEventListener('click', hideModal);
     
-    // Confirm - trigger original button click
+    // Confirm - call Livewire method directly
     confirmBtn.addEventListener('click', function() {
-        if (pendingButton) {
-            const confirmMsg = pendingButton.getAttribute('wire:confirm');
-            pendingButton.removeAttribute('wire:confirm');
-            pendingButton.click();
-            setTimeout(() => {
-                if (confirmMsg) {
-                    pendingButton.setAttribute('wire:confirm', confirmMsg);
+        if (pendingButton && wireClickValue) {
+            console.log('Wire Click Value:', wireClickValue); // Debug
+            
+            // Parse wire:click to get method and params
+            const match = wireClickValue.match(/(\w+)\((.+)\)/);
+            if (match) {
+                const method = match[1];
+                const params = match[2].split(',').map(p => {
+                    const trimmed = p.trim();
+                    return isNaN(trimmed) ? trimmed : Number(trimmed);
+                });
+                
+                console.log('Method:', method); // Debug
+                console.log('Params:', params); // Debug
+                
+                // Try multiple ways to call Livewire
+                
+                // Method 1: Find component by wire:id
+                const wireIdElement = pendingButton.closest('[wire\\:id]');
+                if (wireIdElement) {
+                    const wireId = wireIdElement.getAttribute('wire:id');
+                    console.log('Wire ID:', wireId); // Debug
+                    
+                    if (wireId && window.Livewire) {
+                        const component = window.Livewire.find(wireId);
+                        console.log('Component found:', component); // Debug
+                        
+                        if (component) {
+                            try {
+                                // Try $wire method
+                                if (component.$wire && typeof component.$wire[method] === 'function') {
+                                    component.$wire[method](...params);
+                                    console.log('Called via $wire'); // Debug
+                                } else if (typeof component.call === 'function') {
+                                    // Fallback to .call()
+                                    component.call(method, ...params);
+                                    console.log('Called via .call()'); // Debug
+                                } else {
+                                    console.error('No method to call Livewire');
+                                }
+                            } catch (error) {
+                                console.error('Error calling Livewire:', error);
+                            }
+                        }
+                    }
+                } else {
+                    console.error('No wire:id found');
                 }
-            }, 500);
+            }
         }
         hideModal();
     });
@@ -86,19 +129,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Intercept delete buttons
+    // Intercept delete buttons - PREVENT DEFAULT COMPLETELY
     document.addEventListener('click', function(e) {
-        const btn = e.target.closest('[wire\\:click*="delete"][wire\\:confirm]');
+        // Try both wire:confirm and data-confirm
+        const btn = e.target.closest('[wire\\:click*="delete"][wire\\:confirm], [wire\\:click*="delete"][data-confirm]');
         if (btn) {
-            const confirmMsg = btn.getAttribute('wire:confirm');
+            const confirmMsg = btn.getAttribute('wire:confirm') || btn.getAttribute('data-confirm');
             if (confirmMsg) {
+                // STOP ALL EVENT PROPAGATION
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
+                
+                // Show our custom modal
                 showModal(confirmMsg, btn);
+                
+                // Return false to be extra sure
+                return false;
             }
         }
-    }, true);
+    }, true); // Use capture phase
 });
 
 // Web3 Welcome Page Animations
